@@ -1,36 +1,96 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Methodic Off-Market Tracker
 
-## Getting Started
+Private acquisition lead tracking app for Methodic Ventures.
+Stack: Next.js 16 (App Router) · TypeScript · Tailwind v4 · Supabase (auth + Postgres) · React Query.
 
-First, run the development server:
+## Features
+- **Auth** — Supabase email/password, 4 fixed users (Gavin / Logan / Dean / Intern). Caller name auto-derived from email.
+- **Dashboard** — pipeline funnel, calls/positive responses this week, hot leads, stalled leads, caller leaderboard.
+- **Leads list** — filter by stage, tier, vet status, industry; quick filters: Uncalled · No Response · Positive Response · Active Pipeline · Dead · Vetted.
+- **Lead detail** — inline-edit any field, click-to-call/mailto, full activity timeline.
+- **Log Activity** — single modal: channel, person reached, outcome, duration, notes, optional stage advance. Auto-bumps `attempts_count` and `last_contact_at`.
+- **Upload xlsx** — drag/drop, auto-map columns, dedupe preview, commit.
+- **Duplicates** — review · delete · merge (fills blanks) · promote (false positive).
 
+---
+
+## Setup
+
+### 1. Supabase
+1. Create project at https://supabase.com → name it `methodic-tracker`.
+2. **SQL Editor → New Query** → paste contents of `supabase_schema.sql` → Run.
+3. **Authentication → Providers → Email** → toggle off "Confirm email".
+4. **Authentication → Users → Add user** (4 times, **check Auto Confirm** for each):
+   - `gavin@methodicventures.com` / `Acquireeverything$!`
+   - `logan@methodicventures.com` / `Acquireeverything$!`
+   - `dean@methodicventures.com` / `Acquireeverything$!`
+   - `methodicpartners@gmail.com` / `methodicintern123!`
+5. **Project Settings → API** — copy **Project URL** and **anon public key**.
+
+### 2. Local env
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.local.example .env.local
+# Edit .env.local with your Project URL and anon key
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 3. Run
+```bash
+npm install
+npm run dev
+```
+Open http://localhost:3000 → log in with one of the 4 emails.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Deploy
 
-## Learn More
+### GitHub
+```bash
+# Install GitHub CLI: brew install gh
+gh auth login
+gh repo create methodic-tracker --private --source=. --push
+```
 
-To learn more about Next.js, take a look at the following resources:
+Or manually: create a repo at https://github.com/new (private), then:
+```bash
+git remote add origin https://github.com/YOUR-USER/methodic-tracker.git
+git branch -M main
+git push -u origin main
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Vercel
+1. Go to https://vercel.com/new → import the GitHub repo.
+2. **Environment Variables** → add:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+3. Deploy.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+After deploy, also add the Vercel URL to **Supabase → Authentication → URL Configuration → Site URL** so auth redirects work.
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Project Structure
+```
+src/
+├── app/
+│   ├── (app)/                 # protected route group
+│   │   ├── layout.tsx
+│   │   ├── page.tsx           # Dashboard
+│   │   ├── leads/
+│   │   ├── upload/
+│   │   ├── duplicates/
+│   │   └── settings/
+│   ├── login/page.tsx
+│   ├── layout.tsx
+│   └── globals.css
+├── components/
+│   ├── nav/sidebar.tsx
+│   ├── leads/
+│   ├── ui/primitives.tsx
+│   └── providers.tsx
+├── lib/
+│   ├── supabase/{client,server,middleware,types}.ts
+│   ├── dedupe.ts
+│   └── utils.ts
+└── middleware.ts              # auth gate
+```
