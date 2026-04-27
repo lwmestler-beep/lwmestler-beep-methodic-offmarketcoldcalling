@@ -211,6 +211,12 @@ create table if not exists public.duplicates (
   description text,
   fit_tier text,
   vet_status text,
+  rating numeric,
+  reviews integer,
+  linkedin_url text,
+  facebook_url text,
+  instagram_url text,
+  google_maps_url text,
 
   -- dedupe metadata
   matched_lead_id uuid references public.leads(id) on delete set null,
