@@ -143,7 +143,16 @@ export default function UploadPage() {
     cleaned.website_domain = extractDomain(cleaned.website as string | null);
     cleaned.phone_digits = normalizePhone(cleaned.business_phone as string | null) ?? normalizePhone(cleaned.owner_phone as string | null);
     cleaned.name_normalized = normalizeName(cleaned.business_name as string | null);
+    if (cleaned.vet_status == null) cleaned.vet_status = "Unvetted";
     return cleaned;
+  }
+
+  function stripNullsForLeadInsert(row: Record<string, unknown>) {
+    // For NOT NULL columns with DB defaults, strip nulls so default kicks in.
+    const out = { ...row };
+    if (out.stage == null) delete out.stage;
+    if (out.vet_status == null) out.vet_status = "Unvetted";
+    return out;
   }
 
   async function previewDedupe() {
@@ -273,7 +282,8 @@ export default function UploadPage() {
       }
 
       if (toInsert.length) {
-        const { error } = await supabase.from("leads").insert(toInsert);
+        const cleanInsert = toInsert.map(stripNullsForLeadInsert);
+        const { error } = await supabase.from("leads").insert(cleanInsert);
         if (error) throw error;
       }
       if (toDup.length) {
